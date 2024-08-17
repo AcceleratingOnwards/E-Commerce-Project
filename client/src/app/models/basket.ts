@@ -16,6 +16,6 @@ export interface Basket {
   
   export interface BasketTotals{
     shipping: number;
-    subTotals: number;
+    subTotal: number;
     total: number;
   }
