@@ -4,50 +4,57 @@ import { toast } from "react-toastify";
 import basketService from "./basketService";
 import { Dispatch } from "redux";
 import { Product } from "../models/product";
-import type { Basket } from '../models/basket';
+import type { Basket } from "../models/basket";
 
-
-axios.defaults.baseURL = 'http://localhost:8081/api/';
+axios.defaults.baseURL ='http://localhost:8081/api/';
 
 const idle = () => new Promise(resolve => setTimeout(resolve, 100));
-
 const responseBody = (response: AxiosResponse) => response.data;
 
-axios.interceptors.response.use(async response =>{
+axios.interceptors.response.use(async response=>{
     await idle();
     return response
-}, (error: AxiosError) =>{
-    const {status} = error.response as AxiosResponse;
+}, (error: AxiosError)=>{
+    const {status} = error.response as AxiosResponse; 
     switch(status){
         case 404:
-            // console.log("Resources not found");
-            toast.error("Resources not found");
+            toast.error("Resource not found");
             router.navigate('/not-found');
             break;
         case 500:
-            // console.log("Internal server error occures");
-            toast.error("Internal server error occures");
+            toast.error("Internal server error occurred");
             router.navigate('/server-error');
             break;
         default:
             break;
     }
-
     return Promise.reject(error.message);
 })
 
 const requests = {
-    get: (url:string) => axios.get(url).then(responseBody),
-    post:(url:string, body: object) => axios.post(url, body).then(responseBody),
-    put:(url:string, body: object) => axios.put(url, body).then(responseBody),
-    delete:(url:string) => axios.put(url,).then(responseBody)
-
+    get: (url: string) => axios.get(url).then(responseBody),
+    post: (url: string, body: object) => axios.post(url, body).then(responseBody),
+    put: (url: string, body: object) =>axios.put(url, body).then(responseBody),
+    delete: (url: string) =>axios.put(url).then(responseBody)
 }
 
 const Store = {
-    list:() => requests.get('products'),
-    details:(id: number) => requests.get(`products/${id}`)
-}
+    apiUrl: 'http://localhost:8081/api/products',
+    list:(page: number, size: number, brandId?: number, typeId?: number, url?: string)=> {
+      let requestUrl = url || `products?page=${page-1}&size=${size}`;
+      if(brandId!==undefined){
+        requestUrl += `&brandId=${brandId}`;
+      }
+      if(typeId!==undefined){
+        requestUrl += `&typeId=${typeId}`;
+      }
+      return requests.get(requestUrl);
+    },
+    details:(id: number) => requests.get(`products/${id}`),
+    types: () => requests.get('products/types').then(types => [{ id: 0, name: 'All' }, ...types]),
+    brands: () => requests.get('products/brands').then(brands => [{ id: 0, name: 'All' }, ...brands]),
+    search: (keyword: string) => requests.get(`products?keyword=${keyword}`)
+};
 
 const Basket = {
     get: async() => {
@@ -109,6 +116,7 @@ const Basket = {
         }
       }
 }
+
 
 const agent = {
     Store,
